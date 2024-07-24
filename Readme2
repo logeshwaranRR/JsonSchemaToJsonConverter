@@ -1,0 +1,148 @@
+Here's the flow from one handler to another:
+
+1. **Welcome Step**:
+   - **Handlers**:
+     - `LoginlaasEventCallHandler`
+     - `FlowInitializationIaasEventCallHandler`
+     - `StartCEHEventCallHandler`
+   - **Next Step**: `entitlements`
+
+2. **Entitlements Step**:
+   - **Handler**: `VerifyUserEntitlementsCallHandler`
+   - **Transitions**:
+     - `something-went-wrong` (if `AreParametersInvalid`)
+     - `system-down` (if `IsExternalCallHandlerFailure`)
+     - `invalid-access` (if `AreEntitlementsNotAsRequired`)
+     - `amex-inflight-session`
+
+3. **Amex Inflight Session Step**:
+   - **Handler**: `RetrieveInflightLocationAndSoftwareCallHandler`
+   - **Transitions**:
+     - `system-down` (if `IsExternalCallHandlerFailure`)
+     - `something-went-wrong` (if `IsInflightApplicationInProcess`)
+     - `splash`
+
+4. **Splash Step**:
+   - **Mapper**: `bbSplashDomainMapperImpl`
+   - **Next Step**: `mcmr-session`
+
+5. **MCMR Session Step**:
+   - **Handler**: `MCMRSessionCallHandler`
+   - **Transitions**:
+     - `system-down` (if `IsExternalCallHandlerFailure`)
+     - `something-went-wrong` (if `IsInvalidAccountMaintenanceData`)
+     - `getVerticals`
+
+6. **Get Verticals Step**:
+   - **Handler**: `VerticalsSessionCallHandler`
+   - **Transitions**:
+     - `system-down` (if `IsExternalCallHandlerFailure`)
+     - `get-started`
+
+7. **Get Started Step**:
+   - **Mapper**: `bbamGetStartedDomainMapper`
+   - **Next Step**: `business-questionnaire`
+
+8. **Business Questionnaire Step**:
+   - **Mapper**: `bbamBusinessQuestionnaireDomainMapper`
+   - **Next Step**: `getPricingOptions`
+
+9. **Get Pricing Options Step**:
+   - **Handler**: `PricingOptionSessionCallHandler`
+   - **Transitions**:
+     - `system-down` (if `IsExternalCallHandlerFailure`)
+     - `pricing-options`
+
+10. **Pricing Options Step**:
+    - **Mapper**: `bhamPricingOptionDomainMapper`
+    - **Next Step**: `retrieve-software-list`
+
+11. **Retrieve Software List Step**:
+    - **Handler**: `RetrieveSoftwareListCallHandler`
+    - **Transitions**:
+      - `system-down` (if `IsExternalCallHandlerFailure`)
+      - `byob-software`
+
+12. **BYOB Software Step**:
+    - **Mapper**: `bhamByobAddHardwareDomainMapper`
+    - **Transitions**:
+      - `byob-software` (if `IsGoToByobSoftwareFlow`)
+      - `byob-vas-and-cds` (if `IskdsEnabled`)
+      - `byob-hardware-peripherals`
+
+13. **BYOB VAS and CDS Step**:
+    - **Mapper**: `sfByobVasAndCdsDomainMapper`
+    - **Next Step**: `byob-peripherals`
+
+14. **BYOB Peripherals Step**:
+    - **Mapper**: `bhamByobPeripheralsDomainMapper`
+    - **Next Step**: `byob-hardware-peripherals`
+
+15. **BYOB Hardware Peripherals Step**:
+    - **Mapper**: `bbanByobHardwarePeripheralsDomainMapper`
+    - **Next Step**: `byob-accessories`
+
+16. **BYOB Accessories Step**:
+    - **Mapper**: `bbByobAccessoryDomainMapper`
+    - **Next Step**: `payment-configurations-session`
+
+17. **Payment Configurations Session Step**:
+    - **Handler**: `PaymentConfigurationsSessionCallHandler`
+    - **Transitions**:
+      - `system-down` (if `IsExternalCallHandlerFailure`)
+      - `payment-configurations`
+
+18. **Payment Configurations Step**:
+    - **Mapper**: `bbamPaymentConfigurationDomainMapper`
+    - **Next Step**: `retrieve-shipping-details`
+
+19. **Retrieve Shipping Details Step**:
+    - **Handler**: `RetrieveShippingDetailsCallHandler`
+    - **Transitions**:
+      - `system-down` (if `IsExternalCallHandlerFailure`)
+      - `review-order`
+
+20. **Review Order Step**:
+    - **Mapper**: `bbagReviewOrderDomainMapper`
+    - **Transitions**:
+      - `business-questionnaire` (if `IsGoToEditSolutionOrAddLocationFlow`)
+      - `review-order` (if `IsMaxHardwareOrPeripherals` or `IsAnyLocationHavingInvalidData`)
+      - `submissionCallProductCatalogReviewOrder`
+
+21. **Submission Call Product Catalog Review Order Step**:
+    - **Handler**: `NoOpActionCallHandler`
+    - **Next Step**: `disclosure`
+
+22. **Disclosure Step**:
+    - **Mapper**: `bhamDisclosureDomainMapper`
+    - **Next Step**: `submitApplication`
+
+23. **Submit Application Step**:
+    - **Handler**: `SubmitApplicationCallHandler`
+    - **Transitions**:
+      - `system-down` (if `IsExternalCallHandlerFailure`)
+      - `waiting-screen`
+
+24. **Waiting Screen Step**:
+    - **Mapper**: `waitingScreenDomainMapper`
+    - **Transitions**:
+      - `applicationSubmittedHandler`
+
+25. **Application Submitted Handler Step**:
+    - **Handlers**:
+      - `ExpirePreviousActiveOrderForMerchantHandler`
+      - `NoOpActionCallHandler`
+      - `SubmitCEHEventCallHandler`
+    - **Next Step**: `application-submitted`
+
+26. **Application Submitted Step**:
+    - **Mapper**: `applicationSubmittedDomainMapper`
+
+27. **System Down Step**
+
+28. **Invalid Access Step**
+
+29. **Something Went Wrong Step**:
+    - **Mapper**: `somethingWentWrongDomainMapper`
+
+These steps outline the process flow, highlighting the transition from one handler to another based on the specified rules and conditions.
